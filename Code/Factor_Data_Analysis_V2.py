@@ -133,14 +133,16 @@ names_bidask = bid_ask.columns
 bid_ask.set_index('Date', inplace=True)
 bid_ask = bid_ask.pct_change()'''
 
+# Should this be a level or a pct.change???????
 bid_ask = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Bid Ask CDS-Bond (%)')
 names_bidask = bid_ask.columns
 bid_ask.set_index('Date', inplace=True)
-bid_ask = bid_ask.pct_change()
+bid_ask = bid_ask / 100
+#bid_ask = bid_ask.pct_change()
 
-forex = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Forex')  #No need to do pct change here
-names_forex = forex.columns
+forex = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Forex')  
 forex.set_index('Date', inplace=True)
+forex = forex.pct_change()                  # I think Pct change may be needed to ensure stationary
 
 
 # Read in the country CDS-Bond Basis and Basis - Rf time series data, will be Y variable in regressions
