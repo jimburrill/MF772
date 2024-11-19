@@ -127,8 +127,13 @@ one_yr_tr.set_index('Date', inplace=True)
 one_yr_tr = 1 + (one_yr_tr / 100)
 one_yr_tr = one_yr_tr.pct_change()
 
+# Updating this to be the data for CDS Bid-Ask - Bond Bid-Ask
+'''bid_ask = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Bid Ask (%)')
+names_bidask = bid_ask.columns
+bid_ask.set_index('Date', inplace=True)
+bid_ask = bid_ask.pct_change()'''
 
-bid_ask = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Bid Ask (%)')
+bid_ask = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Bid Ask CDS-Bond (%)')
 names_bidask = bid_ask.columns
 bid_ask.set_index('Date', inplace=True)
 bid_ask = bid_ask.pct_change()
