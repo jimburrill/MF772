@@ -73,7 +73,7 @@ def dictionary_to_excel(file_name, export_data):
 
 #%%
 
-########################## Read in Data and lagg it by 1 time period ####################################
+########################## Read in Data and lag it by 1 time period ####################################
 #%%
 # Define the countries of interest
 countries = ['US', 'UK', 'Germany', 'Japan', 'China']
@@ -150,9 +150,10 @@ bid_ask = bid_ask / 100
 #bid_ask = bid_ask.pct_change()
 bid_ask = bid_ask.shift(1)
 
-forex = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Forex')  #No need to do pct change here
+forex = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Forex')  
 names_forex = forex.columns
 forex.set_index('Date', inplace=True)
+forex = forex.pct_change()                                  # I think Pct change may be needed to ensure stationary
 forex = forex.shift(1)
 
 
@@ -295,7 +296,7 @@ for i in range(1, len(names_gdp)):
         
 # Create DataFrame from all regression results
 cds_analysis_single_factor = pd.DataFrame(regression_results)
-cds_analysis_single_factor.to_excel('cds_single_factor_analysis.xlsx', engine='xlsxwriter', index=False)
+cds_analysis_single_factor.to_excel('cds_single_factor_analysis_lagged.xlsx', engine='xlsxwriter', index=False)
 
   
 
@@ -368,7 +369,7 @@ for i in range(1, len(names_gdp)):
         
 # Create DataFrame from all regression results
 basis_analysis_single_factor = pd.DataFrame(regression_results)
-basis_analysis_single_factor.to_excel('basis_single_factor_analysis.xlsx', engine='xlsxwriter', index=False)
+basis_analysis_single_factor.to_excel('basis_single_factor_analysis_lagged.xlsx', engine='xlsxwriter', index=False)
 
 
 
@@ -442,6 +443,199 @@ for i in range(1, len(names_gdp)):
         
 # Create DataFrame from all regression results
 basis_rf_analysis_single_factor = pd.DataFrame(regression_results)
-basis_rf_analysis_single_factor.to_excel('basis_rf_single_factor_analysis.xlsx', engine='xlsxwriter', index=False)
+basis_rf_analysis_single_factor.to_excel('basis_rf_single_factor_analysis_lagged.xlsx', engine='xlsxwriter', index=False)
+
+
+
+
+#%%
+
+
+#################### CDS Multifactor Analysis #################################### 
+#%% 
+cds_analysis_multi_dict = {}
+for i in range(1, len(names_gdp)):
+    regression_results = []
+    excess_index_return = index_tr[names_index[i]] - one_yr_tr[names_1yr[i]]
+    '''country_ts = pd.DataFrame({names_cds[i]: cds_ts[names_cds[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], names_1yr[i]: one_yr_tr[names_1yr[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})'''
+    country_ts = pd.DataFrame({names_cds[i]: cds_ts[names_cds[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})
+    country_ts = country_ts.dropna()
+    
+    names_country_ts = country_ts.columns
+    num_factors = len(names_country_ts) - 1  # Exclude the dependent variable
+    y = country_ts[names_country_ts[0]]     # Choose the y variable
+    
+    # loop over each factor one at a time, adding one at a time
+    for j in range(2, len(names_country_ts)+1):
+        x = country_ts[names_country_ts[1:j]]
+        
+        results, x_with_const = perform_regression(y, x)
+        
+        transformed_results = store_regression_results_multi_factor(results, countries[i-1], names_country_ts[1:j], (j-1))
+        
+        regression_results.append(transformed_results)
+        
+    # Create DataFrame from all regression results
+    cds_analysis_multi_factor = pd.DataFrame(regression_results)
+    
+    # Store the DataFrame for the current country in the dictionary
+    cds_analysis_multi_dict[countries[i-1]] = cds_analysis_multi_factor
+
+# Export to excel    
+dictionary_to_excel('cds_multi_factor_analysis_laggedv.xlsx', cds_analysis_multi_dict)
+
+
+
+#%%
+
+
+#################### Basis Multifactor Analysis #################################### 
+#%% 
+basis_analysis_multi_dict = {}
+for i in range(1, len(names_gdp)):
+    regression_results = []
+    excess_index_return = index_tr[names_index[i]] - one_yr_tr[names_1yr[i]]
+    '''country_ts = pd.DataFrame({names_basis[i]: basis_ts[names_basis[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], names_1yr[i]: one_yr_tr[names_1yr[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})'''
+    country_ts = pd.DataFrame({names_basis[i]: basis_ts[names_basis[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})
+    country_ts = country_ts.dropna()
+    
+    names_country_ts = country_ts.columns
+    num_factors = len(names_country_ts) - 1  # Exclude the dependent variable
+    y = country_ts[names_country_ts[0]]     # Choose the y variable
+    
+    # loop over each factor one at a time, adding one at a time
+    for j in range(2, len(names_country_ts)+1):
+        x = country_ts[names_country_ts[1:j]]
+        
+        results, x_with_const = perform_regression(y, x)
+        
+        transformed_results = store_regression_results_multi_factor(results, countries[i-1], names_country_ts[1:j], (j-1))
+        
+        regression_results.append(transformed_results)
+        
+    # Create DataFrame from all regression results
+    basis_analysis_multi_factor = pd.DataFrame(regression_results)
+    
+    # Store the DataFrame for the current country in the dictionary
+    basis_analysis_multi_dict[countries[i-1]] = basis_analysis_multi_factor
+    
+# Export to excel    
+dictionary_to_excel('basis_multi_factor_analysis_lagged.xlsx', basis_analysis_multi_dict)
+
+    
+
+#%%
+
+
+#################### Basis-Rf Multifactor Analysis #################################### 
+#%% 
+basis_rf_analysis_multi_dict = {}
+for i in range(1, len(names_gdp)):
+    regression_results = []
+    excess_index_return = index_tr[names_index[i]] - one_yr_tr[names_1yr[i]]
+    '''country_ts = pd.DataFrame({names_basis_rf[i]: basis_rf_ts[names_basis_rf[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], names_1yr[i]: one_yr_tr[names_1yr[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})'''
+    country_ts = pd.DataFrame({names_basis_rf[i]: basis_rf_ts[names_basis_rf[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})
+    country_ts = country_ts.dropna()
+    
+    names_country_ts = country_ts.columns
+    num_factors = len(names_country_ts) - 1  # Exclude the dependent variable
+    y = country_ts[names_country_ts[0]]     # Choose the y variable
+    
+    # loop over each factor one at a time, adding one at a time
+    for j in range(2, len(names_country_ts)+1):
+        x = country_ts[names_country_ts[1:j]]
+        
+        results, x_with_const = perform_regression(y, x)
+        
+        transformed_results = store_regression_results_multi_factor(results, countries[i-1], names_country_ts[1:j], (j-1))
+        
+        regression_results.append(transformed_results)
+        
+    # Create DataFrame from all regression results
+    basis_rf_analysis_multi_factor = pd.DataFrame(regression_results)
+    
+    # Store the DataFrame for the current country in the dictionary
+    basis_rf_analysis_multi_dict[countries[i-1]] = basis_rf_analysis_multi_factor
+    
+# Export to excel    
+dictionary_to_excel('basis_rf_multi_factor_analysis_lagged.xlsx', basis_rf_analysis_multi_dict)
+
+
+
+
+#%%
+
+
+
+#################### Ridge Regression: Basis-Rf Multifactor Analysis #################################### 
+# When almost any lasso is intriduced all factors go to zero
+#%% 
+basis_rf_analysis_elastic_dict = {}
+for i in range(1, len(names_gdp)):
+    regression_results = []
+    excess_index_return = index_tr[names_index[i]] - one_yr_tr[names_1yr[i]]
+    '''country_ts = pd.DataFrame({names_basis_rf[i]: basis_rf_ts[names_basis_rf[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], names_1yr[i]: one_yr_tr[names_1yr[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})'''
+    country_ts = pd.DataFrame({names_basis_rf[i]: basis_rf_ts[names_basis_rf[i]], names_gdp[i]: gdp_gr[names_gdp[i]], 
+                               names_budget[i]: budget_gdp[names_budget[i]], names_macro[2]: macro_uncertainty[names_macro[2]], 
+                               names_inflation[i]: inflation[names_inflation[i]], names_index[i]: excess_index_return, 
+                               names_term[i]: term_structure_tr[names_term[i]], 
+                               names_bidask[i]: bid_ask[names_bidask[i]], names_forex[i]: forex[names_forex[i]]})
+    country_ts = country_ts.dropna()
+    
+    names_country_ts = country_ts.columns
+    num_factors = len(names_country_ts) - 1  # Exclude the dependent variable
+    y = country_ts[names_country_ts[0]]     # Choose the y variable
+    
+    # Do the multifactor ridge regression
+    for j in range(2, len(names_country_ts)+1):
+        # Scale the data for ridge regression
+        scaler = StandardScaler()
+        x = country_ts[names_country_ts[1:j]]
+        x = scaler.fit_transform(x)
+        
+        # L1_ratio controls the mix of lasso and ridge), higher ratio more lass0  
+        # Higher values of alpha imply stronger regularization for ridge portion
+        elastic_net_model = ElasticNet(alpha=1, l1_ratio=0)
+        elastic_net_model.fit(x, y)
+        elastic_net_betas = elastic_net_model.coef_
+                
+        regression_results.append(elastic_net_betas)
+        
+    # Create DataFrame from all regression results
+    basis_rf_analysis_elastic = pd.DataFrame(regression_results)
+    
+    # Store the DataFrame for the current country in the dictionary
+    basis_rf_analysis_elastic_dict[countries[i-1]] = basis_rf_analysis_elastic
+    
+# Export to excel    
+dictionary_to_excel('basis_rf_multi_factor_elastic_lagged.xlsx', basis_rf_analysis_elastic_dict)
 
 
