@@ -77,25 +77,25 @@ def dictionary_to_excel(file_name, export_data):
 #%%
 # Define the countries of interest
 countries = ['US', 'UK', 'Germany', 'Japan', 'China']
-
+lag_periods = 4
 
 # Read in the factor time series data, Extract column names for each set of data
 gdp_gr = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='GDP GR (%)')
 names_gdp = gdp_gr.columns
 gdp_gr.set_index('Date', inplace=True)
 gdp_gr = gdp_gr / 100           # percent to decimal
-gdp_gr = gdp_gr.shift(1)
+gdp_gr = gdp_gr.shift(lag_periods)
 
 budget_gdp = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Budget GDP (%)')
 names_budget = budget_gdp.columns
 budget_gdp.set_index('Date', inplace=True)
 budget_gdp = budget_gdp / 100           # percent to decimal
-budget_gdp = budget_gdp.shift(1)
+budget_gdp = budget_gdp.shift(lag_periods)
 
 macro_uncertainty = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Macro Uncertainty TR')  #No need to do pct change here
 names_macro = macro_uncertainty.columns
 macro_uncertainty.set_index('Date', inplace=True)
-macro_uncertainty = macro_uncertainty.shift(1)
+macro_uncertainty = macro_uncertainty.shift(lag_periods)
 
 financial_uncertainty = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Financial Uncertainty TR')  #No need to do pct change here
 names_financial = financial_uncertainty.columns
@@ -106,35 +106,35 @@ inflation = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Inflation (%)')
 names_inflation = inflation.columns
 inflation.set_index('Date', inplace=True)
 inflation = inflation / 100           # percent to decimal
-inflation = inflation.shift(1)
+inflation = inflation.shift(lag_periods)
 
 one_yr_tr = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='1yr TR')          # Using as a proxy for Rf given no data for China
 names_1yr = one_yr_tr.columns
 one_yr_tr.set_index('Date', inplace=True)
 one_yr_tr = 1 + (one_yr_tr / 100)
 one_yr_tr = one_yr_tr.pct_change()
-one_yr_tr = one_yr_tr.shift(1)
+one_yr_tr = one_yr_tr.shift(lag_periods)
 
 index_tr = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Index TR')
 names_index = index_tr.columns
 index_tr.set_index('Date', inplace=True)
 index_tr = 1 + (index_tr / 100)
 index_tr = index_tr.pct_change()
-index_tr = index_tr.shift(1)
+index_tr = index_tr.shift(lag_periods)
 
 term_structure_tr = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Term Structure TR')
 names_term = term_structure_tr.columns
 term_structure_tr.set_index('Date', inplace=True)
 term_structure_tr = 1 + (term_structure_tr / 100)
 term_structure_tr = term_structure_tr.pct_change()
-term_structure_tr = term_structure_tr.shift(1)
+term_structure_tr = term_structure_tr.shift(lag_periods)
 
 one_yr_tr = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='1yr TR')          # Using as a proxy for Rf given no data for China
 names_1yr = one_yr_tr.columns
 one_yr_tr.set_index('Date', inplace=True)
 one_yr_tr = 1 + (one_yr_tr / 100)
 one_yr_tr = one_yr_tr.pct_change()
-one_yr_tr = one_yr_tr.shift(1)
+one_yr_tr = one_yr_tr.shift(lag_periods)
 
 # Updating this to be the data for CDS Bid-Ask - Bond Bid-Ask
 '''bid_ask = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Bid Ask (%)')
@@ -148,13 +148,13 @@ names_bidask = bid_ask.columns
 bid_ask.set_index('Date', inplace=True)
 bid_ask = bid_ask / 100
 #bid_ask = bid_ask.pct_change()
-bid_ask = bid_ask.shift(1)
+bid_ask = bid_ask.shift(lag_periods)
 
 forex = pd.read_excel('Factor_Master_Data.xlsx', sheet_name='Forex')  
 names_forex = forex.columns
 forex.set_index('Date', inplace=True)
-forex = forex.pct_change()                                  # I think Pct change may be needed to ensure stationary
-forex = forex.shift(1)
+#forex = forex.pct_change()                                  # I think Pct change may be needed to ensure stationary
+forex = forex.shift(lag_periods)
 
 
 # Read in the country CDS-Bond Basis and Basis - Rf time series data, will be Y variable in regressions
